@@ -11,9 +11,10 @@ import {
   Power,
   RotateCcw,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
+import { getTVKeyboardKey } from '@/lib/tv-keyboard';
 import { fireTVRemoteKey } from '@/lib/tv-remote-core';
 
 const focusableSelector = [
@@ -433,10 +434,15 @@ function RemoteButton({
 
 export default function TVVirtualRemote() {
   const router = useRouter();
+  const pathname = usePathname();
+  const [diagnostic, setDiagnostic] = useState('');
   const [open, setOpen] = useState(false);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    const version = /Chrome\/([0-9]+)/.exec(navigator.userAgent);
+    const diagnose = pathname === '/tv' && /MoonTVPlusAndroidTV/.test(navigator.userAgent) && !!version && Number(version[1]) < 68;
+    setDiagnostic(diagnose ? 'REMOTE-1：等待按键' : '');
     const onFocusIn = (event: FocusEvent) => {
       const target = event.target;
       if (
@@ -448,7 +454,11 @@ export default function TVVirtualRemote() {
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'F1') {
+      const key = getTVKeyboardKey(event);
+      const safeKey = /^(Arrow(Up|Down|Left|Right)|Up|Down|Left|Right|Enter|Escape|Unidentified)$/.test(event.key) ? event.key : 'OTHER';
+      const description = `REMOTE-1 ${safeKey} / ${event.keyCode} / ${event.defaultPrevented ? '已拦截' : '已收到'}`;
+      if (diagnose) setDiagnostic(description);
+      if (key === 'F1') {
         event.preventDefault();
         setOpen((value) => !value);
         return;
@@ -457,10 +467,10 @@ export default function TVVirtualRemote() {
       if (event.defaultPrevented) return;
 
       if (
-        event.key === 'ArrowUp' ||
-        event.key === 'ArrowDown' ||
-        event.key === 'ArrowLeft' ||
-        event.key === 'ArrowRight'
+        key === 'ArrowUp' ||
+        key === 'ArrowDown' ||
+        key === 'ArrowLeft' ||
+        key === 'ArrowRight'
       ) {
         // 播放页选集弹窗有自己的方向键导航和焦点陷阱；
         // 这里如果也执行全局空间焦点移动，会导致一次按键移动两格。
@@ -481,7 +491,7 @@ export default function TVVirtualRemote() {
           active.type === 'range' &&
           active.closest('[data-tv-danmaku-settings]')
         ) {
-          if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+          if (key === 'ArrowLeft' || key === 'ArrowRight') {
             return;
           }
         }
@@ -495,16 +505,22 @@ export default function TVVirtualRemote() {
         }
 
         event.preventDefault();
-        const direction = event.key.replace('Arrow', '').toLowerCase() as
+        const direction = key.replace('Arrow', '').toLowerCase() as
           | 'up'
           | 'down'
           | 'left'
           | 'right';
-        moveSpatialFocus(direction, lastFocusedRef.current);
+        try {
+          moveSpatialFocus(direction, lastFocusedRef.current);
+          if (diagnose) setDiagnostic(`${description} / 焦点 ${getFocusableElements().indexOf(document.activeElement as HTMLElement)}`);
+        } catch (error) {
+          if (diagnose) setDiagnostic(`${description} / NAV_ERROR ${error instanceof TypeError ? 'TypeError' : 'Other'}`);
+          else throw error;
+        }
         return;
       }
 
-      if (event.key === 'Enter') {
+      if (key === 'Enter') {
         const playerRoot = document.querySelector<HTMLElement>(
           '[data-tv-player-root]'
         );
@@ -524,7 +540,7 @@ export default function TVVirtualRemote() {
         return;
       }
 
-      if (event.key === 'Escape') {
+      if (key === 'Escape') {
         const path = window.location.pathname;
         const playerPage = path === '/tv/play' || path === '/tv/live/play';
         // 播放页需要优先用返回键关闭选集/频道面板，不能被全局遥控器直接 history.back。
@@ -535,7 +551,7 @@ export default function TVVirtualRemote() {
         return;
       }
 
-      if (event.key === 'Home') {
+      if (key === 'Home') {
         event.preventDefault();
         router.push('/tv');
       }
@@ -547,9 +563,13 @@ export default function TVVirtualRemote() {
       document.removeEventListener('focusin', onFocusIn);
       window.removeEventListener('keydown', onKeyDown, true);
     };
-  }, [router]);
+  }, [router, pathname]);
 
-  if (!open) return null;
+  if (!open) return diagnostic ? (
+    <div data-tv-no-focus='true' style={{position:'fixed',left:16,bottom:16,zIndex:100,color:'#fff',background:'#111',padding:'8px 12px',fontSize:18,pointerEvents:'none'}}>
+      {diagnostic}
+    </div>
+  ) : null;
 
   return (
     <aside
