@@ -4,8 +4,6 @@
 https://event.pull.hebtv.com/jishi/weishi_tingyun.m3u8
 #EXTINF:-1 tvg-id="浙江钱江都市" tvg-name="浙江钱江" tvg-logo="https://raw.githubusercontent.com/fanmingming/live/main/tv/%E9%92%B1%E6%B1%9F%E9%83%BD%E5%B8%82.png" group-title="地方台",浙江钱江
 https://ali-xwl.cztv.com/live/channel021080Plxw.m3u8
-#EXTINF:-1 tvg-id="广州综合" tvg-name="广州综合" tvg-logo="https://raw.githubusercontent.com/fanmingming/live/main/tv/%E5%B9%BF%E5%B7%9E%E7%BB%BC%E5%90%88.png" group-title="地方台",广州综合
-https://tencentplaybusiness.gztv.com/live/zonghes.m3u8
 #EXTINF:-1 tvg-id="东莞新闻综合" tvg-name="东莞新闻综合" tvg-logo="https://raw.githubusercontent.com/fanmingming/live/main/tv/%E4%B8%9C%E8%8E%9E%E6%96%B0%E9%97%BB%E7%BB%BC%E5%90%88.png" group-title="地方台",东莞新闻综合
 https://stream.sun0769.com/dgrtv1/mp4tv1_800/index.m3u8
 #EXTINF:-1 tvg-id="CGTN Global Biz" tvg-name="CGTN Global Biz" tvg-logo="" group-title="财经资讯",CGTN Global Biz
