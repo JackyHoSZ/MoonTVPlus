@@ -1,3 +1,7 @@
+# 2026-10-14 第二阶段更新
+
+弹幕 VPS 已部署并接入，弹幕自动加载及 TV 模式已开启。下文为第一阶段交付记录；涉及“VPS 尚未部署/弹幕关闭/电视关闭”的描述已由 [实际 VPS 部署记录](VPS_DANMAKU_INTEGRATION.md) 和 [最终验收](DANMU_ACCEPTANCE.md) 取代。
+
 # MoonTVPlus 私人 Cloudflare 部署
 
 核实日期：2026-10-14。上游 `mtvpls/MoonTVPlus` main `c7c5a3648025b24c5d7c0c13eaef148cf8b29b48`，应用版本 `226.1.0`。当日 GitHub 未提供 latest release，故采用所核实的 main 提交，不称其为正式稳定发行版。
