@@ -18,6 +18,8 @@ export function requestQrJson(path: string, method = 'GET') {
     xhr.open(method, path, true);
     xhr.timeout = 12000;
     xhr.setRequestHeader('Accept', 'application/json');
+    // Preserve fetch's former no-store behavior for status polling.
+    xhr.setRequestHeader('Cache-Control', 'no-cache, no-store');
     xhr.onload = () => {
       // Never display a response body, URL, token or an arbitrary exception message.
       try {
