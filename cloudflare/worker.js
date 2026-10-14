@@ -28,7 +28,7 @@ export default {
       return new Response('Private site setup in progress.', { status: 503 });
     }
     const response = await app.fetch(request, env, ctx);
-    const forwardedHost = request.headers.get('x-forwarded-host');
+    const forwardedHost = request.headers.get('x-moontv-public-host');
     const fromVpsEntry = new URL(request.url).hostname === 'origin-tv.vafa.eu.org' &&
       ['tv.vafa.eu.org', 'tv-cn.vafa.eu.org'].includes(forwardedHost);
     // Also prevent image/file endpoints from relaying media bytes to the VPS.
