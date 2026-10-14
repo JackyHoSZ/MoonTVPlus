@@ -1,0 +1,75 @@
+# MoonTVPlus 私人 Cloudflare 部署
+
+核实日期：2026-10-14。上游 `mtvpls/MoonTVPlus` main `c7c5a3648025b24c5d7c0c13eaef148cf8b29b48`，应用版本 `226.1.0`。当日 GitHub 未提供 latest release，故采用所核实的 main 提交，不称其为正式稳定发行版。
+
+## 实际资源
+
+- Fork：https://github.com/JackyHoSZ/MoonTVPlus （保留 upstream 关系）。
+- 正式地址：https://tv.vafa.eu.org
+- 备用地址：https://moontv-plus.hexj.workers.dev
+- Worker：`moontv-plus`；免费 Workers；OpenNext + Next.js 14.2.35；Node.js 兼容标志。
+- D1：`moontvplus`；binding `DB`；ID `1a7f2a68-6917-4f16-b50e-55ee749f0106`。
+- Custom Domain 已绑定，HTTPS 已实际访问。根域及原有 Worker/Pages/D1 保留；未创建弹幕域名 DNS、未操作 VPS。
+- D1 迁移 `001` 至 `012` 已按 Wrangler migrations 执行并核实实际表和迁移记录。008 重建通知表，仅在新空库初始化时执行；后续升级应逐项审查新迁移。
+
+## 配置与安全
+
+`wrangler.toml` 包含资源 ID 和非敏感变量。构建和运行时均使用 `NEXT_PUBLIC_STORAGE_TYPE=d1`。`SITE_BASE` 为正式域名。Worker Secrets：`USERNAME`、`PASSWORD`、`CRON_PASSWORD`，通过 Wrangler Secret bulk 提交；不进入 Git 或 CI 构建环境。管理员为 admin，随机高强度密码单独交付，不在本文保存。
+
+D1 SiteConfig 已关闭公开注册及 OIDC 注册，弹幕自动加载关闭。用户本地设置云同步设为自动。电视模式、TVBox 订阅、一起看、离线下载、Telegram 登录/注册均关闭。部署入口 `cloudflare/worker.js` 在未设置管理员凭证时拒绝服务，默认禁止上游中间件豁免认证的公开媒体代理，并在弹幕未配置时返回空结果，避免访问上游公共默认弹幕服务。
+
+禁用代理也意味着依赖代理的部分跨域 M3U8、Emby/OpenList 播放暂不可用。以后如需启用，应先实现适当的鉴权与目标限制。元数据/图片仍采用上游默认第三方豆瓣 CDN，其可用性依赖第三方；没有配置影视播放源。
+
+Secrets 不会因普通 `wrangler deploy` 被清空。站点设置存于 D1，既有配置优先于初始化环境变量。后续修改既有站点请通过管理后台，不要只改环境变量后假定生效。
+
+## 可重复部署
+
+要求 Node.js 24、package.json 指定的 pnpm 10.14.0。项目锁定 Wrangler 4.60.0。
+
+```sh
+corepack enable
+pnpm install --frozen-lockfile
+NEXT_PUBLIC_STORAGE_TYPE=d1 NEXT_TELEMETRY_DISABLED=1 pnpm build:cloudflare
+pnpm exec wrangler login
+pnpm exec wrangler d1 migrations apply moontvplus --remote
+pnpm exec wrangler deploy
+```
+
+首次创建新站点时先核对资源 ID，使用交互式 `pnpm exec wrangler secret put PASSWORD` 等命令设置三个 Secrets。不要把凭证写进命令行、仓库或构建日志。不要对本次已初始化的库重复手动执行原始建表 SQL。
+
+GitHub Actions：`.github/workflows/cloudflare-deploy.yml`，main 代码推送或手动运行触发；文档单独变更不触发。流程：冻结依赖 → 无凭证构建 → 迁移 → 查表 → 发布 → HTTPS/D1/禁止注册检查。同一生产环境串行发布。
+
+仓库 Secret 只有 `CLOUDFLARE_API_TOKEN`。令牌限制到当前账户（Workers Scripts Edit、D1 Edit）和 `vafa.eu.org`（Workers Routes Edit、Zone Read）。Cloudflare 账户级权限仍可覆盖该账户内其他 Worker/D1，不能理解为只授权单个项目。未授予 DNS Edit、账户管理或计费权限。六个无关的上游 Docker/Android/EdgeOne/Turso workflows 已在此 Fork 禁用，后续同步检查勿误启用。
+
+## 更新、备份和回滚
+
+1. 更新前记录当前 Git SHA、Worker version；执行 D1 导出并离线保存，SQL 含用户数据，不提交 Git 或公开 artifacts。
+2. 在维护分支 fetch upstream、merge 指定上游提交，检查迁移及本地部署配置差异。先本地构建、审查变更，再合并 main 触发部署。不要用强制同步覆盖私人配置。
+3. 核实 Actions 绿灯，实际登录、设置和播放记录仍存在。定期检查令牌有效性与免费额度。
+
+```sh
+pnpm exec wrangler d1 export moontvplus --remote --output ../moontvplus-backup.sql
+pnpm exec wrangler deployments list
+pnpm exec wrangler versions list
+# 用实际列表中的已验证版本 ID，必要时回滚代码：
+pnpm exec wrangler rollback <VERSION_ID>
+git fetch upstream
+git switch -c update-upstream
+git merge upstream/main
+```
+
+代码回滚不会回滚 D1 schema/data。数据库恢复先检查 D1 Time Travel/导出内容和业务写入，单独确认恢复点与影响，不盲目导入覆盖。定期备份到用户控制的安全位置。本次没有建立自动数据库备份计划。
+
+## 已解决的问题
+
+- 原始 Wrangler OAuth 过期：重新官方授权成功；GitHub 通过官方 device flow 授权。
+- pnpm 11 与项目版本不一致：改用锁定 pnpm 10.14.0，撤销其添加的 workspace allowBuilds。
+- 官方工作流未固定 Wrangler、SQL 错误被忽略且存在输出含密钥配置风险：固定依赖、使用迁移跟踪及失败即停止，不输出密钥。
+- 浏览器主题脚本 `ReferenceError: e is not defined`：Wrangler keep_names 注入 helper 被 next-themes 序列化后脱离作用域。配置 `keep_names=false` 修复，未改业务源码。
+- 压缩 Worker 约 2.7 MiB，符合当前免费套餐 3 MiB 上限；以后更新仍须检查包体。
+
+## 限制与验收证据
+
+管理员 API 登录/配置保存读取、D1 12 次迁移/实际表、重复发布后配置保留、正式 HTTPS 已验证。完整浏览器与 CI 最终验收记录见交付的验收报告。无影视源，聚合搜索结果、真实资源详情、跨源选集与跨设备播放尚不能报告成功。VPS 和弹幕平台联调属于下一阶段。
+
+上游构建的 serverExternalPackages/Edge Node API 和 eval 警告未导致当前构建失败；不能据此保证所有未启用功能兼容 Workers。免费配额可能变化，参阅 [Workers 限制](https://developers.cloudflare.com/workers/platform/limits/) 与 [D1 定价](https://developers.cloudflare.com/d1/platform/pricing/)。本次未升级套餐或购买资源。

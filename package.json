@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "pnpm gen:manifest && node server.js",
     "build": "pnpm gen:manifest && next build",
-    "build:cloudflare": "BUILD_TARGET=cloudflare pnpm gen:manifest && BUILD_TARGET=cloudflare npx @opennextjs/cloudflare build",
+    "build:cloudflare": "BUILD_TARGET=cloudflare pnpm gen:manifest && BUILD_TARGET=cloudflare pnpm exec opennextjs-cloudflare build",
     "start": "NODE_ENV=production node server.js",
     "preview:cloudflare": "wrangler dev",
     "deploy:cloudflare": "wrangler deploy",
@@ -126,7 +126,8 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^4.9.5",
     "vercel": "^50.4.10",
-    "webpack-obfuscator": "^3.5.1"
+    "webpack-obfuscator": "^3.5.1",
+    "wrangler": "4.60.0"
   },
   "packageManager": "pnpm@10.14.0"
 }

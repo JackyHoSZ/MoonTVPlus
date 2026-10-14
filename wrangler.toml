@@ -1,8 +1,15 @@
 name = "moontv-plus"
-compatibility_date = "2024-09-23"
+compatibility_date = "2026-10-14"
 compatibility_flags = ["nodejs_compat"]
-main = ".open-next/worker.js"
+main = "cloudflare/worker.js"
 minify = true
+# next-themes serializes its bootstrap function into HTML; esbuild name helpers
+# are outside that serialized scope and cause ReferenceError in the browser.
+keep_names = false
+workers_dev = true
+preview_urls = false
+routes = [{ pattern = "tv.vafa.eu.org", custom_domain = true }]
+account_id = "78171bcd948636b78f86b5550d066fbb"
 
 # 静态资源配置
 # Cloudflare Workers Assets 用于服务静态文件
@@ -14,8 +21,23 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "moontvplus"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "1a7f2a68-6917-4f16-b50e-55ee749f0106"
 
 [vars]
 NODE_ENV = "production"
 BUILD_TARGET = "cloudflare"
+
+NEXT_PUBLIC_STORAGE_TYPE = "d1"
+SITE_BASE = "https://tv.vafa.eu.org"
+ENABLE_TV_MODE = "false"
+ENABLE_TVBOX_SUBSCRIBE = "false"
+WATCH_ROOM_ENABLED = "false"
+NEXT_PUBLIC_ENABLE_OFFLINE_DOWNLOAD = "false"
+TELEGRAM_LOGIN_ENABLED = "false"
+TELEGRAM_REGISTRATION_ENABLED = "false"
+DISABLE_PUBLIC_PROXIES = "true"
+DANMAKU_ENABLED = "false"
+
+[observability]
+enabled = true
+head_sampling_rate = 0.1
