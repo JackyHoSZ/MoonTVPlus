@@ -8,7 +8,11 @@ minify = true
 keep_names = false
 workers_dev = true
 preview_urls = false
-routes = [{ pattern = "tv.vafa.eu.org", custom_domain = true }]
+# Keep the production binding until the VPS entry passes acceptance.
+routes = [
+  { pattern = "tv.vafa.eu.org", custom_domain = true },
+  { pattern = "origin-tv.vafa.eu.org", custom_domain = true },
+]
 account_id = "78171bcd948636b78f86b5550d066fbb"
 
 # 静态资源配置
