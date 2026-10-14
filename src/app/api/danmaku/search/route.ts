@@ -63,12 +63,12 @@ export async function GET(request: NextRequest) {
       throw fetchError;
     }
   } catch (error) {
-    console.error('弹幕搜索代理错误:', error);
+    console.error('弹幕搜索暂时不可用，请稍后重试');
     return NextResponse.json(
       {
         errorCode: -1,
         success: false,
-        errorMessage: error instanceof Error ? error.message : '搜索失败',
+        errorMessage: '弹幕搜索暂时不可用，请稍后重试',
         animes: [],
       },
       { status: 500 }

@@ -68,13 +68,12 @@ export async function GET(request: NextRequest) {
       throw fetchError;
     }
   } catch (error) {
-    console.error('获取剧集列表代理错误:', error);
+    console.error('弹幕剧集列表暂时不可用，请稍后重试');
     return NextResponse.json(
       {
         errorCode: -1,
         success: false,
-        errorMessage:
-          error instanceof Error ? error.message : '获取剧集列表失败',
+        errorMessage: '弹幕剧集列表暂时不可用，请稍后重试',
         bangumi: {
           bangumiId: '',
           animeTitle: '',

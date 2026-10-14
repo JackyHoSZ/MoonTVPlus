@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
       throw fetchError;
     }
   } catch (error) {
-    console.error('获取弹幕代理错误:', error);
+    console.error('弹幕加载暂时不可用，请稍后重试');
     return NextResponse.json(
       {
         count: 0,

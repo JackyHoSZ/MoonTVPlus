@@ -65,12 +65,12 @@ export async function POST(request: NextRequest) {
       throw fetchError;
     }
   } catch (error) {
-    console.error('自动匹配代理错误:', error);
+    console.error('弹幕匹配暂时不可用，请稍后重试');
     return NextResponse.json(
       {
         errorCode: -1,
         success: false,
-        errorMessage: error instanceof Error ? error.message : '匹配失败',
+        errorMessage: '弹幕匹配暂时不可用，请稍后重试',
         isMatched: false,
         matches: [],
       },
