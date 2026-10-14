@@ -7,7 +7,10 @@ import { cookies } from 'next/headers';
 import './globals.css';
 
 import { parseAuthInfo } from '@/lib/auth';
-import { LEGACY_GLOBAL_THIS_POLYFILL } from '@/lib/browser-compat';
+import {
+  LEGACY_FETCH_CREDENTIALS_POLYFILL,
+  LEGACY_GLOBAL_THIS_POLYFILL,
+} from '@/lib/browser-compat';
 import { getConfig } from '@/lib/config';
 import { getUserFeatureAccess } from '@/lib/permissions';
 import { listEnabledSourceScripts } from '@/lib/source-script';
@@ -384,7 +387,9 @@ export default async function RootLayout({
         {/* Run synchronously before Next's client runtime, including cached loads. */}
         <script
           id='legacy-global-this'
-          dangerouslySetInnerHTML={{ __html: LEGACY_GLOBAL_THIS_POLYFILL }}
+          dangerouslySetInnerHTML={{
+            __html: LEGACY_GLOBAL_THIS_POLYFILL + LEGACY_FETCH_CREDENTIALS_POLYFILL,
+          }}
         />
         {/* 配套 moontvplus-extension 识别指纹；仅本项目部署站应带此标记 */}
         <meta name='moontvplus-site' content='1' />

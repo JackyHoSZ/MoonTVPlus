@@ -188,7 +188,7 @@ export default function TVLoginPage() {
             </a>
           </div>
           <p id='tv-login-compat' className='mt-3 text-sm text-slate-300'>
-            {engine}登录诊断版本 QR-2。若一直停在加载组件，请重新加载或尝试
+            {engine}登录诊断版本 QR-3。若一直停在加载组件，请重新加载或尝试
             GeckoView 版本。
           </p>
           <noscript>JavaScript 未启用，无法生成二维码。</noscript>

@@ -8,7 +8,7 @@
       var info = document.getElementById('tv-login-compat');
       if (info && version)
         info.textContent =
-          '浏览器内核 Chrome ' + version[1] + '；登录诊断版本 QR-2';
+          '浏览器内核 Chrome ' + version[1] + '；登录诊断版本 QR-3';
       status.textContent =
         '登录脚本未启动（BOOT）：脚本加载失败或浏览器内核不兼容。请重新加载，或尝试 GeckoView 版本。';
     }
