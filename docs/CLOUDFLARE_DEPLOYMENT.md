@@ -73,3 +73,27 @@ git merge upstream/main
 管理员 API 登录/配置保存读取、D1 12 次迁移/实际表、重复发布后配置保留、正式 HTTPS 已验证。完整浏览器与 CI 最终验收记录见交付的验收报告。无影视源，聚合搜索结果、真实资源详情、跨源选集与跨设备播放尚不能报告成功。VPS 和弹幕平台联调属于下一阶段。
 
 上游构建的 serverExternalPackages/Edge Node API 和 eval 警告未导致当前构建失败；不能据此保证所有未启用功能兼容 Workers。免费配额可能变化，参阅 [Workers 限制](https://developers.cloudflare.com/workers/platform/limits/) 与 [D1 定价](https://developers.cloudflare.com/d1/platform/pricing/)。本次未升级套餐或购买资源。
+
+## 最终验收（2026-10-14）
+
+实际部署 Git SHA：`0ca984d8afe0697a54e315bc3842be397d9e1cfc`。GitHub [首次自动部署](https://github.com/JackyHoSZ/MoonTVPlus/actions/runs/38502164035) 成功，后续仅文档提交不改变运行代码。Worker version：`14d16e6d-245b-45f2-8ded-605ab288915a`；压缩上传2611.84 KiB，启动51 ms。Actions 再次运行迁移提示无待执行项。
+
+| 检查 | 实测结果 |
+|---|---|
+| 正式域名、TLS、首页、CSS/图片 | 通过；857px和1280px桌面视口加载 |
+| 管理员登录、退出、重新登录 | 通过；站长角色、d1显示正确 |
+| 后台保存与刷新 | 通过；用户设置云同步自动模式刷新保留 |
+| D1结构和读写 | 12个迁移已记录；admin_config一条；真实播放器写入play_records |
+| 重发布后数据 | Actions发布后配置和测试视频6/52秒记录仍在；首页显示继续观看 |
+| 影视搜索 | 页面及空源搜索通过；Sintel返回0组，无虚构资源 |
+| 影视详情 | 豆瓣详情面板标题、简介、演员等加载成功；播放源详情仍待配源验证 |
+| ArtPlayer | W3C Sintel MP4实际出现画面并前进，D1记录写入；单直链没有多集可选 |
+| 客户端日志 | 首页/搜索/详情新标签无error；MP4测速会产生非阻断HLS networkError，实际播放成功；主题阻断错误已修复 |
+| Worker运行日志 | 发布后15次请求均outcome=ok，无exceptions、无error日志（抽样，不代表未测功能） |
+| 匿名访问 | 首页307去登录；admin/config与playrecords为401；公开代理404；TVBox订阅403；错误cron口令401 |
+| 弹幕未部署 | 接口返回可处理的空结果；视频正常播放，不访问默认公共弹幕 |
+| 移动端 | 390×844视口覆盖未生效，实测仍为857/1280px；未计为移动端通过，iPhone/Windows实机待测 |
+
+尚未验证：有权限的多影视源搜索/线路/选集、不同设备进度恢复、腾讯/爱奇艺等弹幕联调、完整错误压力与容量测试。没有添加未知资源站。测速提示来自上游MP4测速走HLS路径；当前不阻断播放，保留为后续上游修复项，没有为此大改业务逻辑。
+
+Actions 使用的v4动作有Node20弃用提示，实际运行被GitHub切到Node24且成功；ubuntu-latest也有即将更新镜像提示。后续维护应升级核实过的actions并重新验证，当前不据此声称零警告。
