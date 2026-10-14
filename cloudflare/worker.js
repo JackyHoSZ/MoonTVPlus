@@ -27,6 +27,22 @@ export default {
     if (!env.USERNAME || !env.PASSWORD) {
       return new Response('Private site setup in progress.', { status: 503 });
     }
-    return app.fetch(request, env, ctx);
+    const response = await app.fetch(request, env, ctx);
+    const forwardedHost = request.headers.get('x-forwarded-host');
+    const fromVpsEntry = new URL(request.url).hostname === 'origin-tv.vafa.eu.org' &&
+      ['tv.vafa.eu.org', 'tv-cn.vafa.eu.org'].includes(forwardedHost);
+    // Also prevent image/file endpoints from relaying media bytes to the VPS.
+    if (fromVpsEntry && response.body) {
+      const type = (response.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+      const media = /^(video\/|audio\/)/.test(type) ||
+        ['application/octet-stream', 'application/vnd.apple.mpegurl',
+         'application/x-mpegurl', 'application/dash+xml', 'application/mp4'].includes(type);
+      if (media) {
+        await response.body.cancel();
+        return Response.json({ error: 'Media relay disabled on VPS entry; use a direct-play source.' },
+          { status: 403, headers: { 'Cache-Control': 'no-store' } });
+      }
+    }
+    return response;
   },
 };
