@@ -29,14 +29,14 @@ BUILD_TARGET = "cloudflare"
 
 NEXT_PUBLIC_STORAGE_TYPE = "d1"
 SITE_BASE = "https://tv.vafa.eu.org"
-ENABLE_TV_MODE = "false"
+ENABLE_TV_MODE = "true"
 ENABLE_TVBOX_SUBSCRIBE = "false"
 WATCH_ROOM_ENABLED = "false"
 NEXT_PUBLIC_ENABLE_OFFLINE_DOWNLOAD = "false"
 TELEGRAM_LOGIN_ENABLED = "false"
 TELEGRAM_REGISTRATION_ENABLED = "false"
 DISABLE_PUBLIC_PROXIES = "true"
-DANMAKU_ENABLED = "false"
+DANMAKU_ENABLED = "true"
 
 [observability]
 enabled = true
