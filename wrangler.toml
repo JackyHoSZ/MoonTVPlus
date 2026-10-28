@@ -8,8 +8,10 @@ minify = true
 keep_names = false
 workers_dev = true
 preview_urls = false
-# Public tv / tv-cn DNS points to VPS. Only the fixed origin belongs to Worker.
+# Temporary VPS failover: tv is served directly by this existing Worker.
+# Keep the fixed origin for the VPS reverse proxy when it becomes available.
 routes = [
+  { pattern = "tv.vafa.eu.org", custom_domain = true },
   { pattern = "origin-tv.vafa.eu.org", custom_domain = true },
 ]
 account_id = "78171bcd948636b78f86b5550d066fbb"

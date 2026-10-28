@@ -1,0 +1,84 @@
+name: Switch TV domain to Cloudflare
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: moontvplus-production
+  cancel-in-progress: false
+
+jobs:
+  route-only:
+    if: github.repository == 'JackyHoSZ/MoonTVPlus'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_ACCOUNT_ID: 78171bcd948636b78f86b5550d066fbb
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Prepare domain-only operation and record deployment identity
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          cat > "$RUNNER_TEMP/audit-tv.py" <<'PY'
+          import json, os, pathlib, sys, tomllib, urllib.request
+          account = os.environ['CLOUDFLARE_ACCOUNT_ID']
+          worker = 'moontv-plus'
+          output = pathlib.Path(os.environ['RUNNER_TEMP'])
+          def api(path):
+              req = urllib.request.Request('https://api.cloudflare.com/client/v4/' + path,
+                  headers={'Authorization': 'Bearer ' + os.environ['CLOUDFLARE_API_TOKEN']})
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  data = json.load(response)
+              if not data.get('success'):
+                  raise RuntimeError('Cloudflare API did not succeed: ' + path)
+              return data['result']
+          prefix = 'accounts/' + account + '/workers/'
+          domains = api(prefix + 'domains')
+          current = sorted(d['hostname'] for d in domains if d['service'] == worker)
+          settings = api(prefix + 'scripts/' + worker + '/settings')
+          deployments = api(prefix + 'scripts/' + worker + '/deployments')
+          bindings = sorted((b['name'], b['id']) for b in settings.get('bindings', []) if b['type'] == 'd1')
+          subdomain = api(prefix + 'scripts/' + worker + '/subdomain')
+          state = {'domains': current, 'deployments': deployments, 'd1_bindings': bindings,
+              'workers_dev': subdomain['enabled'], 'preview_urls': subdomain.get('previews_enabled', False)}
+          expected = ['origin-tv.vafa.eu.org', 'tv.vafa.eu.org']
+          assert bindings == [('DB', '1a7f2a68-6917-4f16-b50e-55ee749f0106')], 'Unexpected D1 binding'
+          if sys.argv[1] == 'before':
+              assert 'origin-tv.vafa.eu.org' in current and set(current) <= set(expected), 'Unexpected custom domains'
+              config = tomllib.loads(pathlib.Path('wrangler.toml').read_text())
+              assert sorted(r['pattern'] for r in config['routes'] if r.get('custom_domain')) == expected
+              minimal = {'name': worker, 'account_id': account, 'compatibility_date': config['compatibility_date'],
+                  'workers_dev': state['workers_dev'], 'preview_urls': state['preview_urls'], 'routes': config['routes']}
+              (output / 'tv-routing.json').write_text(json.dumps(minimal))
+          else:
+              before = json.loads((output / 'tv-routing-before.json').read_text())
+              assert current == expected, 'Custom domain switch was not applied'
+              for field in ['deployments', 'd1_bindings', 'workers_dev', 'preview_urls']:
+                  assert state[field] == before[field], 'Unexpected change to ' + field
+          (output / ('tv-routing-' + sys.argv[1] + '.json')).write_text(json.dumps(state, indent=2))
+          print(json.dumps({'phase': sys.argv[1], 'domains': current, 'd1_binding_verified': True}))
+          PY
+          python3 "$RUNNER_TEMP/audit-tv.py" before
+      - name: Apply domains without uploading code or running migrations
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npx --yes wrangler@4.60.0 triggers deploy --config "$RUNNER_TEMP/tv-routing.json"
+      - name: Verify domain and unchanged Worker deployment and D1 binding
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: python3 "$RUNNER_TEMP/audit-tv.py" after
+      - name: Save routing evidence without secrets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tv-domain-routing-evidence
+          path: ${{ runner.temp }}/tv-routing-*.json
+          retention-days: 30
