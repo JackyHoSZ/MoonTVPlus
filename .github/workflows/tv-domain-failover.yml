@@ -47,7 +47,7 @@ jobs:
           deployments = api(prefix + 'scripts/' + worker + '/deployments')
           bindings = sorted((b['name'], b['id']) for b in settings.get('bindings', []) if b['type'] == 'd1')
           subdomain = api(prefix + 'scripts/' + worker + '/subdomain')
-          state = {'domains': current, 'deployments': deployments, 'd1_bindings': bindings,
+          state = {'domains': current, 'deployments': deployments, 'd1_bindings': [list(b) for b in bindings],
               'workers_dev': subdomain['enabled'], 'preview_urls': subdomain.get('previews_enabled', False)}
           expected = ['origin-tv.vafa.eu.org', 'tv.vafa.eu.org']
           assert bindings == [('DB', '1a7f2a68-6917-4f16-b50e-55ee749f0106')], 'Unexpected D1 binding'
