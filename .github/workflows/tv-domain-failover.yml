@@ -1,4 +1,4 @@
-name: Switch TV domain to Cloudflare
+name: Apply TV domain routing
 
 on:
   workflow_dispatch:
@@ -49,11 +49,13 @@ jobs:
           subdomain = api(prefix + 'scripts/' + worker + '/subdomain')
           state = {'domains': current, 'deployments': deployments, 'd1_bindings': [list(b) for b in bindings],
               'workers_dev': subdomain['enabled'], 'preview_urls': subdomain.get('previews_enabled', False)}
-          expected = ['origin-tv.vafa.eu.org', 'tv.vafa.eu.org']
+          config = tomllib.loads(pathlib.Path('wrangler.toml').read_text())
+          expected = sorted(r['pattern'] for r in config['routes'] if r.get('custom_domain'))
+          allowed = ['origin-tv.vafa.eu.org', 'tv.vafa.eu.org']
+          assert expected in [['origin-tv.vafa.eu.org'], allowed], 'Unexpected desired domains'
           assert bindings == [('DB', '1a7f2a68-6917-4f16-b50e-55ee749f0106')], 'Unexpected D1 binding'
           if sys.argv[1] == 'before':
-              assert 'origin-tv.vafa.eu.org' in current and set(current) <= set(expected), 'Unexpected custom domains'
-              config = tomllib.loads(pathlib.Path('wrangler.toml').read_text())
+              assert 'origin-tv.vafa.eu.org' in current and set(current) <= set(allowed), 'Unexpected custom domains'
               assert sorted(r['pattern'] for r in config['routes'] if r.get('custom_domain')) == expected
               minimal = {'name': worker, 'account_id': account, 'compatibility_date': config['compatibility_date'],
                   'workers_dev': state['workers_dev'], 'preview_urls': state['preview_urls'], 'routes': config['routes']}
